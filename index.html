@@ -20,25 +20,6 @@
       text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
       margin-bottom: 20px;
     }
-    .form-container {
-      margin: 20px auto;
-      background: rgba(255, 255, 255, 0.95);
-      padding: 20px;
-      border-radius: 15px;
-      max-width: 700px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-    }
-    h2 {
-      color: #1A1A1A;
-      font-size: 1.5em;
-      margin-bottom: 10px;
-    }
-    iframe {
-      width: 100%;
-      max-width: 640px;
-      height: 715px;
-      border: none;
-    }
     table {
       width: 80%;
       margin: 20px auto;
@@ -59,17 +40,11 @@
       color: #1A1A1A;
       font-weight: 700;
     }
-    td {
-      transition: background 0.3s;
-    }
-    td:hover {
-      background: rgba(255, 215, 0, 0.1);
-    }
-    .overdue {
+    td.overdue {
       color: #FF4444;
       font-weight: bold;
     }
-    .paid {
+    td.paid {
       color: #2ECC71;
       font-weight: bold;
     }
@@ -82,54 +57,70 @@
 </head>
 <body>
   <h1>Dorm Debt Wall of Shame 💸</h1>
-  <div class="form-container">
-    <h2>Record a Debt</h2>
-    <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSdkFTlZFZg-hC1imN0YMwhiBUrZKiJUeDmA8v8xkf4mgLKz2Q/viewform?embedded=true" width="640" height="715">Loading…</iframe>
-  </div>
 
   <table id="debtTable">
-    <tr><th>Who</th><th>Date</th><th>Amount</th><th>Status</th></tr>
+    <tr>
+      <th>Who</th>
+      <th>Date</th>
+      <th>Amount</th>
+      <th>Status</th>
+    </tr>
   </table>
 
   <div class="total">Total Outstanding: $<span id="total">0.00</span></div>
 
   <script>
-    const SHEET_ID = '1f3R0FgbERWKPfxi3W9W_B-pocC9HYM_XX5byvVboPko';
-    const API_KEY = '[YOUR_API_KEY]'; // Replace with your actual API key
+    const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQHm4zML5L4yh6YMcWRncLrYLkY17fGCvdx3VExwSi0R4acPhoQuBr_DJzd3X-CEwVAYOzdFFw6mT4o/pub?output=csv&gid=1070003212';
 
-    async function loadDebts() {
+    async function fetchCSV() {
       try {
-        const response = await fetch(
-          `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/output!A2:D?key=${API_KEY}`
-        );
-        const data = await response.json();
-        const debts = data.values || [];
-        const table = document.getElementById('debtTable');
-        table.innerHTML = '<tr><th>Who</th><th>Date</th><th>Amount</th><th>Status</th></tr>';
-        let total = 0;
-
-        debts.forEach(debt => {
-          const [who, date, amount, status] = debt;
-          const parsedAmount = parseFloat(amount) || 0;
-          if (status.toLowerCase() === 'outstanding') total += parsedAmount;
-          const row = table.insertRow();
-          row.innerHTML = `
-            <td>${who}</td>
-            <td>${date}</td>
-            <td class="${parsedAmount > 50 && status.toLowerCase() === 'outstanding' ? 'overdue' : ''}">$${parsedAmount.toFixed(2)}</td>
-            <td class="${status.toLowerCase() === 'paid' ? 'paid' : 'overdue'}">${status}</td>
-          `;
-        });
-
-        document.getElementById('total').textContent = total.toFixed(2);
-      } catch (error) {
-        console.error('Error fetching debts:', error);
-        const table = document.getElementById('debtTable');
-        table.innerHTML = '<tr><td colspan="4">Error loading debts. Try again!</td></tr>';
+        const response = await fetch(sheetUrl);
+        const csvText = await response.text();
+        const rows = csvText.split('\n').map(row => row.split(','));
+        renderTable(rows);
+      } catch (err) {
+        console.error('Error fetching CSV:', err);
+        document.getElementById('debtTable').innerHTML = '<tr><td colspan="4">Error loading debts. Please try again later.</td></tr>';
       }
     }
 
-    loadDebts();
+    function renderTable(rows) {
+      const table = document.getElementById('debtTable');
+      // Reset table except header
+      table.innerHTML = `
+        <tr>
+          <th>Who</th>
+          <th>Date</th>
+          <th>Amount</th>
+          <th>Status</th>
+        </tr>
+      `;
+
+      let total = 0;
+
+      rows.forEach((row, index) => {
+        if (index === 0 || row.length < 4) return; // Skip header or incomplete rows
+        const [who, date, amount, status] = row;
+        const parsedAmount = parseFloat(amount) || 0;
+        if (status.toLowerCase() === 'outstanding') total += parsedAmount;
+
+        const tr = document.createElement('tr');
+
+        tr.innerHTML = `
+          <td>${who}</td>
+          <td>${date}</td>
+          <td class="${parsedAmount > 50 && status.toLowerCase() === 'outstanding' ? 'overdue' : ''}">$${parsedAmount.toFixed(2)}</td>
+          <td class="${status.toLowerCase() === 'paid' ? 'paid' : 'overdue'}">${status}</td>
+        `;
+
+        table.appendChild(tr);
+      });
+
+      document.getElementById('total').textContent = total.toFixed(2);
+    }
+
+    fetchCSV();
+    setInterval(fetchCSV, 60000); // Refresh every 60 seconds
   </script>
 </body>
 </html>
