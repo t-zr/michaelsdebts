@@ -20,8 +20,22 @@
       text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
       margin-bottom: 20px;
     }
+    .form-container {
+      margin: 20px auto;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 20px;
+      border-radius: 15px;
+      max-width: 700px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+    iframe {
+      width: 100%;
+      max-width: 640px;
+      height: 715px;
+      border: none;
+    }
     table {
-      width: 80%;
+      width: 90%;
       margin: 20px auto;
       border-collapse: collapse;
       background: #FFFFFF;
@@ -58,11 +72,20 @@
 <body>
   <h1>Dorm Debt Wall of Shame 💸</h1>
 
+  <!-- Embedded Google Form -->
+  <div class="form-container">
+    <h2>Record a Debt</h2>
+    <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSdkFTlZFZg-hC1imN0YMwhiBUrZKiJUeDmA8v8xkf4mgLKz2Q/viewform?embedded=true" 
+            width="640" height="715" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
+  </div>
+
+  <!-- Debts Table -->
   <table id="debtTable">
     <tr>
       <th>Who</th>
       <th>Date</th>
       <th>Amount</th>
+      <th>Item</th>
       <th>Status</th>
     </tr>
   </table>
@@ -80,7 +103,7 @@
         renderTable(rows);
       } catch (err) {
         console.error('Error fetching CSV:', err);
-        document.getElementById('debtTable').innerHTML = '<tr><td colspan="4">Error loading debts. Please try again later.</td></tr>';
+        document.getElementById('debtTable').innerHTML = '<tr><td colspan="5">Error loading debts. Please try again later.</td></tr>';
       }
     }
 
@@ -92,6 +115,7 @@
           <th>Who</th>
           <th>Date</th>
           <th>Amount</th>
+          <th>Item</th>
           <th>Status</th>
         </tr>
       `;
@@ -99,8 +123,8 @@
       let total = 0;
 
       rows.forEach((row, index) => {
-        if (index === 0 || row.length < 4) return; // Skip header or incomplete rows
-        const [who, date, amount, status] = row;
+        if (index === 0 || row.length < 5) return; // Skip header or incomplete rows
+        const [who, date, amount, item, status] = row;
         const parsedAmount = parseFloat(amount) || 0;
         if (status.toLowerCase() === 'outstanding') total += parsedAmount;
 
@@ -110,6 +134,7 @@
           <td>${who}</td>
           <td>${date}</td>
           <td class="${parsedAmount > 50 && status.toLowerCase() === 'outstanding' ? 'overdue' : ''}">$${parsedAmount.toFixed(2)}</td>
+          <td>${item}</td>
           <td class="${status.toLowerCase() === 'paid' ? 'paid' : 'overdue'}">${status}</td>
         `;
 
