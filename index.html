@@ -100,7 +100,7 @@
     async function loadDebts() {
       try {
         const response = await fetch(
-          `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Output!A2:D?key=${API_KEY}`
+          `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/output!A2:D?key=${API_KEY}`
         );
         const data = await response.json();
         const debts = data.values || [];
